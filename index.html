@@ -618,6 +618,8 @@ footer,footer a{overflow-wrap:anywhere}
   .footer-grid{gap:26px}
 }
 @media(max-width:380px){.w{padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}.metrics-grid{grid-template-columns:1fr}}
+@media(max-width:920px){.footer-grid{grid-template-columns:1fr 1fr;gap:26px 20px}.footer-grid>div:first-child,.footer-grid>div:last-child{grid-column:1/-1}}
+.dark-box:not(.crimson-box) a.btn{box-shadow:0 0 0 1px rgba(255,255,255,.4)}
 </style>
 </head>
 <body>
@@ -669,7 +671,7 @@ var SERVICES_LIST = [
     cat: "Quick Commerce",
     tagColor: "navy",
     cardClass: "",
-    btnClass: "btn btn-navy", // Blue box has Navy / Blue CTA button
+    btnClass: "btn", // Blue box has Red CTA button
     desc: "Quick commerce is availability-driven. Paid ads cannot compensate for out-of-stock dark store shelves.",
     items: ["Blinkit, Zepto, and Instamart onboarding", "Dark-store level assortment planning", "Micro-inventory & store replenishment alerts", "Promotions & store-level visibility tracking"]
   },
@@ -689,7 +691,7 @@ var SERVICES_LIST = [
     cat: "Specialized Channels",
     tagColor: "navy",
     cardClass: "",
-    btnClass: "btn btn-navy", // Blue box has Navy / Blue CTA button
+    btnClass: "btn", // Blue box has Red CTA button
     desc: "Healthcare, Ayurvedic, and wellness brands require disciplined channel positioning and stock consistency.",
     items: ["Tata 1mg, Netmeds, PharmEasy setup", "Assortment planning for healthcare shoppers", "Availability & replenishment planning", "High-retention repeat basket strategies"]
   },
@@ -709,7 +711,7 @@ var SERVICES_LIST = [
     cat: "Strategy & P&L",
     tagColor: "navy",
     cardClass: "",
-    btnClass: "btn btn-navy", // Blue box has Navy / Blue CTA button
+    btnClass: "btn", // Blue box has Red CTA button
     desc: "Unifying digital supply chains, conversion optimization, and review velocity into an organic compounding engine.",
     items: ["Competitor pricing benchmarking", "Legitimate, policy-compliant review systems", "Unit economics & margin threshold auditing", "Consolidated monthly e-commerce P&L reviews"]
   }
@@ -1150,7 +1152,28 @@ function initContactForm() {
     if (errors || form.bot_check.value) return;
 
     var fb = document.querySelector("#form-feedback");
-    fb.innerHTML = '<div class="notice" style="border-color:var(--navy);color:var(--navy);margin-top:14px;">Your details are validated. Inquiries can also be forwarded directly to <b>' + CONFIG.email + '</b>.</div>';
+    var data = {};
+    new FormData(form).forEach(function(v, k) { if (k !== "bot_check") data[k] = v; });
+    var mail = CONFIG.email;
+    var thanks = '<div class="notice" style="border-color:var(--navy);margin-top:14px;padding:26px;">' +
+      '<h3 style="margin:0 0 10px;color:var(--navy);">Thank you for reaching out to us.</h3>' +
+      '<p>We&rsquo;ve received your query and truly appreciate your interest in Inarico. One of our experts will get in touch with you shortly to understand your requirements and assist you further.</p>' +
+      '<p style="margin:0;">In the meantime, you can also reach us directly at <a href="mailto:' + mail + '" style="font-weight:700;">' + mail + '</a>.</p></div>';
+    function showThanks() {
+      Array.prototype.forEach.call(form.children, function(c) { if (!c.contains(fb)) c.style.display = "none"; });
+      fb.innerHTML = thanks;
+      fb.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    if (CONFIG.endpoint) {
+      fb.innerHTML = '<div class="notice">Sending your enquiry&hellip;</div>';
+      fetch(CONFIG.endpoint, { method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(data) })
+        .then(function(r) { if (!r.ok) throw new Error("fail"); showThanks(); })
+        .catch(function() { fb.innerHTML = '<div class="notice" style="border-color:#DC2626;color:#DC2626;">We could not send your enquiry. Please try again or write to <b>' + mail + '</b>.</div>'; });
+    } else {
+      var body = Object.keys(data).map(function(k) { return k.replace(/_/g, " ") + ": " + data[k]; }).join("\n");
+      fb.innerHTML = '<div class="notice" style="border-color:var(--navy);color:var(--navy);margin-top:14px;">Your email app should open with your enquiry ready to send. Please press send to complete it. If nothing opens, write to <b>' + mail + '</b>.</div>';
+      window.location.href = "mailto:" + mail + "?subject=" + encodeURIComponent("Website enquiry from " + data.name + " (" + data.company + ")") + "&body=" + encodeURIComponent(body);
+    }
   };
 }
 
@@ -1233,9 +1256,8 @@ document.querySelector("#footer-content").innerHTML = '<div class="w">' +
       '<a href="#/contact" style="margin-top:10px;font-weight:700;color:#60A5FA;">Write to us &rarr;</a>' +
     '</div>' +
   '</div>' +
-  '<div style="border-top:1px solid #1E2D4A;padding-top:20px;margin-top:38px;font-size:0.8rem;color:#64748B;display:flex;justify-content:space-between;flex-wrap:gap:10px;">' +
+  '<div style="border-top:1px solid #1E2D4A;padding-top:20px;margin-top:38px;font-size:0.8rem;color:#64748B;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">' +
     '<span>&copy; 2026 INARICO Business Solutions. All rights reserved.</span>' +
-    '<span>Platform marks belong to their respective trademark holders.</span>' +
   '</div>' +
 '</div>';
 
